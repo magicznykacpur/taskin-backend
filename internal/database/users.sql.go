@@ -11,14 +11,15 @@ import (
 )
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO users(id, created_at, updated_at, username, hashed_password)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO users(id, created_at, updated_at, email, username, hashed_password)
+VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type CreateUserParams struct {
 	ID             string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	Email          string
 	Username       string
 	HashedPassword string
 }
@@ -28,6 +29,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.Email,
 		arg.Username,
 		arg.HashedPassword,
 	)
@@ -35,7 +37,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, created_at, updated_at, username, hashed_password FROM users WHERE id = ?
+SELECT id, created_at, updated_at, email, username, hashed_password FROM users WHERE id = ?
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
@@ -45,6 +47,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Email,
 		&i.Username,
 		&i.HashedPassword,
 	)
@@ -52,7 +55,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, created_at, updated_at, username, hashed_password FROM users
+SELECT id, created_at, updated_at, email, username, hashed_password FROM users
 `
 
 func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
@@ -68,6 +71,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Email,
 			&i.Username,
 			&i.HashedPassword,
 		); err != nil {

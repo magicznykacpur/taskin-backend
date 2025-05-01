@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("sqlite", "taskin")
+	db, err := sql.Open("sqlite", "taskin.db")
 	if err != nil {
 		log.Fatalf("couldnt open database: %v", err)
 	}

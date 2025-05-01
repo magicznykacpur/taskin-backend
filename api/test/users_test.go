@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	validUserReq = `{"username":"test user","password":"password"}`
-	invalidUserReq = `{"username":"test user"}`
+	validUserReq     = `{"username":"test user","password":"password","email":"email@test.com"}`
+	invalidUserReq   = `{"username":"test user"}`
 	malformedUserReq = `{"username`
 )
 
@@ -29,6 +29,7 @@ const createUsersTable = `CREATE TABLE users (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     username TEXT NOT NULL UNIQUE,
+	email TEXT NOT NULL UNIQUE,
     hashed_password TEXT NOT NULL
 );`
 
@@ -87,6 +88,7 @@ func TestValidUserReq(t *testing.T) {
 
 	assert.Equal(t, 1, len(users))
 	assert.Equal(t, "test user", users[0].Username)
+	assert.Equal(t, "email@test.com", users[0].Email)
 }
 
 func TestInvalidUserReq(t *testing.T) {
@@ -141,58 +143,55 @@ func TestMalformedRequestBody(t *testing.T) {
 	assert.Equal(t, "request body invalid", errorRes.ErrorMessage)
 }
 
-// TODO: test unique user creation
-// func TestUniqueUser(t *testing.T) {
-// 	c, rec := setupEcho(http.MethodPost, "/users", validUserReq)
-// 	db, err := setupDB()
-// 	if err != nil {
-// 		log.Fatalf("coudlnt create database: %v", err)
-// 	}
+func TestUniqueUser(t *testing.T) {
+	c, rec := setupEcho(http.MethodPost, "/users", validUserReq)
+	db, err := setupDB()
+	if err != nil {
+		log.Fatalf("coudlnt create database: %v", err)
+	}
 
-// 	cfg := api.ApiConfig{Port: ":42069", DB: database.New(db)}
-// 	err = cfg.HandleCreateUser(c)
-// 	assert.NoError(t, err)
+	cfg := api.ApiConfig{Port: ":42069", DB: database.New(db)}
+	err = cfg.HandleCreateUser(c)
+	assert.NoError(t, err)
 
-// 	res := rec.Result()
-// 	defer res.Body.Close()
-// 	resBytes, err := io.ReadAll(res.Body)
-// 	if err != nil {
-// 		log.Fatalf("couldnt read res body bytes: %v", err)
-// 	}
+	res := rec.Result()
+	defer res.Body.Close()
+	resBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatalf("couldnt read res body bytes: %v", err)
+	}
 
-// 	var userRes api.CreateUserRes
-// 	if err := json.Unmarshal(resBytes, &userRes); err != nil {
-// 		log.Fatalf("couldnt unmarshall res body: %v", err)
-// 	}
+	var userRes api.CreateUserRes
+	if err := json.Unmarshal(resBytes, &userRes); err != nil {
+		log.Fatalf("couldnt unmarshall res body: %v", err)
+	}
 
-// 	assert.Equal(t, "test user", userRes.Username)
+	assert.Equal(t, "test user", userRes.Username)
 
-// 	users, err := cfg.DB.GetUsers(context.Background())
-// 	if err != nil {
-// 		log.Fatalf("coudlnt retrieve users: %v", err)
-// 	}
+	users, err := cfg.DB.GetUsers(context.Background())
+	if err != nil {
+		log.Fatalf("coudlnt retrieve users: %v", err)
+	}
 
-// 	assert.Equal(t, 1, len(users))
-// 	assert.Equal(t, "test user", users[0].Username)
+	assert.Equal(t, 1, len(users))
+	assert.Equal(t, "test user", users[0].Username)
 
-// 	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(validUserReq))
-// 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 	rec = httptest.NewRecorder()
+	c, rec = setupEcho(http.MethodPost, "/users", validUserReq)
 
-// 	err = cfg.HandleCreateUser(c)
-// 	assert.NoError(t, err)
+	err = cfg.HandleCreateUser(c)
+	assert.NoError(t, err)
 
-// 	res = rec.Result()
-// 	defer res.Body.Close()
-// 	resBytes, err = io.ReadAll(res.Body)
-// 	if err != nil {
-// 		log.Fatalf("couldnt read res body bytes: %v", err)
-// 	}
+	res = rec.Result()
+	defer res.Body.Close()
+	resBytes, err = io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatalf("couldnt read res body bytes: %v", err)
+	}
 
-// 	var errorRes api.ErrorResponse
-// 	if err := json.Unmarshal(resBytes, &errorRes); err != nil {
-// 		log.Fatalf("couldnt unmarshall res body: %v", err)
-// 	}
+	var errorRes api.ErrorResponse
+	if err := json.Unmarshal(resBytes, &errorRes); err != nil {
+		log.Fatalf("couldnt unmarshall res body: %v", err)
+	}
 
-// 	assert.Equal(t, "request body invalid", errorRes.ErrorMessage)
-// }
+	assert.Equal(t, "couldn't create user: constraint failed: UNIQUE constraint failed: users.email (2067)", errorRes.ErrorMessage)
+}

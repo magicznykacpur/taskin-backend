@@ -15,11 +15,13 @@ import (
 
 type CreateUserReq struct {
 	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type CreateUserRes struct {
 	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
@@ -36,7 +38,7 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
-	if userReq.Username == "" || userReq.Password == "" {
+	if userReq.Username == "" || userReq.Password == "" || userReq.Email == "" {
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
@@ -46,15 +48,16 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 	}
 
 	err = cfg.DB.CreateUser(c.Request().Context(), database.CreateUserParams{
-		ID: uuid.NewString(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Username: userReq.Username,
+		ID:             uuid.NewString(),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+		Email:          userReq.Email,
+		Username:       userReq.Username,
 		HashedPassword: string(hash),
 	})
 	if err != nil {
 		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldn't create user: %v", err))
 	}
 
-	return c.JSON(http.StatusCreated, CreateUserRes{Username: userReq.Username})
+	return c.JSON(http.StatusCreated, CreateUserRes{Username: userReq.Username, Email: userReq.Email})
 }
