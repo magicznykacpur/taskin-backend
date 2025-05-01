@@ -100,7 +100,7 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 		return respondWithError(c, http.StatusUnauthorized, "invalid email or password")
 	}
 
-	refreshToken, err := auth.GenerateRefreshToken(user.ID)
+	refreshToken, err := auth.GenerateRefreshToken()
 	if err != nil {
 		return respondWithError(c, http.StatusInternalServerError, "couldnt generate refresh token")
 	}

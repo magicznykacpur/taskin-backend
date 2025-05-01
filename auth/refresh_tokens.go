@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func GenerateRefreshToken(userId string) (string, error) {
+func GenerateRefreshToken() (string, error) {
 	buf := make([]byte, 64)
 
 	_, err := rand.Read(buf)
