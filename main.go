@@ -28,6 +28,7 @@ func main() {
 	})
 
 	e.POST("/api/users", cfg.HandleCreateUser)
+	e.POST("/api/login", cfg.HandleLoginUser)
 
 	e.Logger.Fatal(e.Start(cfg.Port))
 }

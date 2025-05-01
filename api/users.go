@@ -61,3 +61,44 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, CreateUserRes{Username: userReq.Username, Email: userReq.Email})
 }
+
+type LoginReq struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginRes struct {
+	JWTToken     string `json:"jwt_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
+	req := c.Request()
+	defer req.Body.Close()
+
+	requestBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "coudln't read req body bytes")
+	}
+
+	var loginReq LoginReq
+	if err := json.Unmarshal(requestBytes, &loginReq); err != nil {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	if loginReq.Email == "" || loginReq.Password == "" {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	user, err := cfg.DB.GetUserByEmail(c.Request().Context(), loginReq.Email)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "invalid email or password")
+	}
+
+	err = auth.ComparePassword(user.HashedPassword, loginReq.Password)
+	if err != nil {
+		return respondWithError(c, http.StatusUnauthorized, "invalid email or password")
+	}
+
+	return c.JSON(http.StatusOK, LoginRes{JWTToken: "this token is awesome", RefreshToken: "this one is even better"})
+}
