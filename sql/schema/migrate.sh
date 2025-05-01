@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-goose sqlite3 ../../taskin $1
+goose sqlite3 ../../taskin.db $1
