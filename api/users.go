@@ -27,12 +27,12 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 
 	requestBytes, err := io.ReadAll(req.Body)
 	if err != nil {
-		respondWithError(c, http.StatusInternalServerError, "coudln't read req body bytes")
+		return respondWithError(c, http.StatusInternalServerError, "coudln't read req body bytes")
 	}
 
 	var userReq CreateUserReq
 	if err := json.Unmarshal(requestBytes, &userReq); err != nil {
-		respondWithError(c, http.StatusBadRequest, "request body invalid")
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
 	err = cfg.DB.CreateUser(c.Request().Context(), database.CreateUserParams{
@@ -43,9 +43,8 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 		HashedPassword: userReq.Password,
 	})
 	if err != nil {
-		respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldn't create user: %v", err))
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldn't create user: %v", err))
 	}
 
-	c.JSON(http.StatusCreated, CreateUserRes{Username: userReq.Username})
-	return nil
+	return c.JSON(http.StatusCreated, CreateUserRes{Username: userReq.Username})
 }

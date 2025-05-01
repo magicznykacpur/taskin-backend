@@ -12,7 +12,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-
 func main() {
 	db, err := sql.Open("sqlite", "taskin")
 	if err != nil {
@@ -21,7 +20,7 @@ func main() {
 
 	queries := database.New(db)
 	cfg := api.ApiConfig{Port: ":42069", DB: queries}
-	
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 
