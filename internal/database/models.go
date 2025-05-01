@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type RefreshToken struct {
+	UserID    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	IsRevoked int64
+	ExpiresAt time.Time
+}
+
 type User struct {
 	ID             string
 	CreatedAt      time.Time
