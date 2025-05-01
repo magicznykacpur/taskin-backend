@@ -18,8 +18,7 @@ func main() {
 		log.Fatalf("couldnt open database: %v", err)
 	}
 
-	queries := database.New(db)
-	cfg := api.ApiConfig{Port: ":42069", DB: queries}
+	cfg := api.ApiConfig{Port: ":42069", DB: database.New(db)}
 
 	e := echo.New()
 	e.Use(middleware.Logger())

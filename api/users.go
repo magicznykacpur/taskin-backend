@@ -35,6 +35,10 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
+	if userReq.Username == "" || userReq.Password == "" {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
 	err = cfg.DB.CreateUser(c.Request().Context(), database.CreateUserParams{
 		ID: uuid.NewString(),
 		CreatedAt: time.Now(),
