@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -92,7 +93,7 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 
 	user, err := cfg.DB.GetUserByEmail(c.Request().Context(), loginReq.Email)
 	if err != nil {
-		return respondWithError(c, http.StatusNotFound, "invalid email or password")
+		return respondWithError(c, http.StatusUnauthorized, "invalid email or password")
 	}
 
 	err = auth.ComparePassword(user.HashedPassword, loginReq.Password)
@@ -100,21 +101,43 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 		return respondWithError(c, http.StatusUnauthorized, "invalid email or password")
 	}
 
-	refreshToken, err := auth.GenerateRefreshToken()
-	if err != nil {
-		return respondWithError(c, http.StatusInternalServerError, "couldnt generate refresh token")
-	}
+	validRefreshToken, err := cfg.DB.GetValidRefreshTokenForUserId(
+		c.Request().Context(),
+		database.GetValidRefreshTokenForUserIdParams{
+			UserID:    user.ID,
+			ExpiresAt: time.Now(),
+		},
+	)
 
-	err = cfg.DB.CreateRefreshToken(c.Request().Context(), database.CreateRefreshTokenParams{
-		UserID: user.ID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Token: refreshToken,
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 31),
-	})
-	if err != nil {
-		return respondWithError(c, http.StatusInternalServerError, "couldnt create refresh token")
+	if validRefreshToken != (database.RefreshToken{}) {
+		jwtToken, err := auth.GenerateJWTToken(user.ID, os.Getenv("JWT_SECRET"), time.Hour)
+		if err != nil {
+			return respondWithError(c, http.StatusInternalServerError, "couldnt generate jwt token")
+		}
+	
+		return c.JSON(http.StatusOK, LoginRes{JWTToken: jwtToken, RefreshToken: validRefreshToken.Token})
+	} else {
+		refreshToken, err := auth.GenerateRefreshToken()
+		if err != nil {
+			return respondWithError(c, http.StatusInternalServerError, "couldnt generate refresh token")
+		}
+	
+		err = cfg.DB.CreateRefreshToken(c.Request().Context(), database.CreateRefreshTokenParams{
+			UserID:    user.ID,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Token:     refreshToken,
+			ExpiresAt: time.Now().Add(time.Hour * 24 * 31),
+		})
+		if err != nil {
+			return respondWithError(c, http.StatusInternalServerError, "couldnt create refresh token")
+		}
+	
+		jwtToken, err := auth.GenerateJWTToken(user.ID, os.Getenv("JWT_SECRET"), time.Hour)
+		if err != nil {
+			return respondWithError(c, http.StatusInternalServerError, "couldnt generate jwt token")
+		}
+	
+		return c.JSON(http.StatusOK, LoginRes{JWTToken: jwtToken, RefreshToken: refreshToken})
 	}
-
-	return c.JSON(http.StatusOK, LoginRes{JWTToken: "this token is awesome", RefreshToken: refreshToken})
 }
