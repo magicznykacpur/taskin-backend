@@ -1,6 +1,7 @@
 -- +goose Up
 CREATE TABLE refresh_tokens (
     user_id TEXT NOT NULL,
+    token TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     is_revoked INTEGER NOT NULL,
@@ -8,4 +9,4 @@ CREATE TABLE refresh_tokens (
 );
 
 -- +goose Down
-DROP TABLE refresh_token;
+DROP TABLE refresh_tokens;

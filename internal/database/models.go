@@ -10,6 +10,7 @@ import (
 
 type RefreshToken struct {
 	UserID    string
+	Token     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	IsRevoked int64

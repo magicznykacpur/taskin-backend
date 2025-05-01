@@ -100,5 +100,21 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 		return respondWithError(c, http.StatusUnauthorized, "invalid email or password")
 	}
 
-	return c.JSON(http.StatusOK, LoginRes{JWTToken: "this token is awesome", RefreshToken: "this one is even better"})
+	refreshToken, err := auth.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "couldnt generate refresh token")
+	}
+
+	err = cfg.DB.CreateRefreshToken(c.Request().Context(), database.CreateRefreshTokenParams{
+		UserID: user.ID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Token: refreshToken,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 31),
+	})
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "couldnt create refresh token")
+	}
+
+	return c.JSON(http.StatusOK, LoginRes{JWTToken: "this token is awesome", RefreshToken: refreshToken})
 }

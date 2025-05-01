@@ -10,29 +10,45 @@ import (
 	"time"
 )
 
-const createRefreshToken = `-- name: CreateRefreshToken :one
-INSERT INTO refresh_tokens(user_id, created_at, updated_at, is_revoked, expires_at)
-VALUES (?, ?, ?, 0, ?)
-RETURNING user_id, created_at, updated_at, is_revoked, expires_at
+const createRefreshToken = `-- name: CreateRefreshToken :exec
+INSERT INTO refresh_tokens(user_id, token, created_at, updated_at, is_revoked, expires_at)
+VALUES (?, ?, ?, ?, 0, ?)
 `
 
 type CreateRefreshTokenParams struct {
 	UserID    string
+	Token     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	ExpiresAt time.Time
 }
 
-func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
-	row := q.db.QueryRowContext(ctx, createRefreshToken,
+func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
+	_, err := q.db.ExecContext(ctx, createRefreshToken,
 		arg.UserID,
+		arg.Token,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.ExpiresAt,
 	)
+	return err
+}
+
+const getValidRefreshTokenForUserId = `-- name: GetValidRefreshTokenForUserId :one
+SELECT user_id, token, created_at, updated_at, is_revoked, expires_at FROM refresh_tokens WHERE is_revoked = 0 AND expires_at > ? AND user_id = ?
+`
+
+type GetValidRefreshTokenForUserIdParams struct {
+	ExpiresAt time.Time
+	UserID    string
+}
+
+func (q *Queries) GetValidRefreshTokenForUserId(ctx context.Context, arg GetValidRefreshTokenForUserIdParams) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, getValidRefreshTokenForUserId, arg.ExpiresAt, arg.UserID)
 	var i RefreshToken
 	err := row.Scan(
 		&i.UserID,
+		&i.Token,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.IsRevoked,
