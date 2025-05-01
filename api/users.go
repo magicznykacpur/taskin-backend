@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/magicznykacpur/taskin-backend/auth"
 	"github.com/magicznykacpur/taskin-backend/internal/database"
 )
 
@@ -39,12 +40,17 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
+	hash, err := auth.HashPassword(userReq.Password)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "coudlnt hash password")
+	}
+
 	err = cfg.DB.CreateUser(c.Request().Context(), database.CreateUserParams{
 		ID: uuid.NewString(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Username: userReq.Username,
-		HashedPassword: userReq.Password,
+		HashedPassword: string(hash),
 	})
 	if err != nil {
 		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldn't create user: %v", err))
