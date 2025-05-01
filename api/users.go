@@ -114,14 +114,14 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 		if err != nil {
 			return respondWithError(c, http.StatusInternalServerError, "couldnt generate jwt token")
 		}
-	
+
 		return c.JSON(http.StatusOK, LoginRes{JWTToken: jwtToken, RefreshToken: validRefreshToken.Token})
 	} else {
 		refreshToken, err := auth.GenerateRefreshToken()
 		if err != nil {
 			return respondWithError(c, http.StatusInternalServerError, "couldnt generate refresh token")
 		}
-	
+
 		err = cfg.DB.CreateRefreshToken(c.Request().Context(), database.CreateRefreshTokenParams{
 			UserID:    user.ID,
 			CreatedAt: time.Now(),
@@ -132,12 +132,51 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 		if err != nil {
 			return respondWithError(c, http.StatusInternalServerError, "couldnt create refresh token")
 		}
-	
+
 		jwtToken, err := auth.GenerateJWTToken(user.ID, os.Getenv("JWT_SECRET"), time.Hour)
 		if err != nil {
 			return respondWithError(c, http.StatusInternalServerError, "couldnt generate jwt token")
 		}
-	
+
 		return c.JSON(http.StatusOK, LoginRes{JWTToken: jwtToken, RefreshToken: refreshToken})
 	}
+}
+
+type LogoutReq struct {
+	Email string `json:"email"`
+}
+
+type LogoutRes struct {
+	Message string `json:"message"`
+}
+
+func (cfg *ApiConfig) HandleLogoutUser(c echo.Context) error {
+	req := c.Request()
+	defer req.Body.Close()
+
+	requestBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "coudln't read req body bytes")
+	}
+
+	var logoutReq LogoutReq
+	if err := json.Unmarshal(requestBytes, &logoutReq); err != nil {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	if logoutReq.Email == "" {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	user, err := cfg.DB.GetUserByEmail(c.Request().Context(), logoutReq.Email)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "user not found")
+	}
+
+	err = cfg.DB.RevokeRefreshToken(c.Request().Context(), user.ID)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "couldnt revoke refresh token")
+	}
+
+	return c.JSON(http.StatusOK, LogoutRes{Message: "user successfully logged out"})
 }
