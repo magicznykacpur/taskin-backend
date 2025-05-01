@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -12,7 +14,22 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+func loadEnvVars() {
+	data, err := os.ReadFile(".env")
+	if err != nil {
+		log.Fatalf("coudlnt open env file: %v", err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		parts := strings.Split(line, "=")
+		os.Setenv(parts[0], parts[1])
+	}
+}
+
 func main() {
+	loadEnvVars()
+
 	db, err := sql.Open("sqlite", "taskin.db")
 	if err != nil {
 		log.Fatalf("couldnt open database: %v", err)
