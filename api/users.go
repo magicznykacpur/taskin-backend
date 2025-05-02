@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,8 +57,14 @@ func (cfg *ApiConfig) HandleCreateUser(c echo.Context) error {
 		Username:       userReq.Username,
 		HashedPassword: string(hash),
 	})
-	if err != nil {
-		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldn't create user: %v", err))
+	if err != nil && !strings.Contains(err.Error(), "UNIQUE") {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("coudlnt create user: %v", err))
+	}
+	if err != nil && strings.Contains(err.Error(), "users.username") {
+		return respondWithError(c, http.StatusBadRequest, "user with that username already exists")
+	}
+	if err != nil && strings.Contains(err.Error(), "users.email") {
+		return respondWithError(c, http.StatusBadRequest, "user with that email already exists")
 	}
 
 	return c.JSON(http.StatusCreated, CreateUserRes{Username: userReq.Username, Email: userReq.Email})

@@ -44,7 +44,7 @@ func main() {
 		return c.String(http.StatusOK, "ping")
 	})
 
-	e.POST("/api/users", cfg.HandleCreateUser)
+	e.POST("/api/signup", cfg.HandleCreateUser)
 	e.POST("/api/login", cfg.HandleLoginUser)
 	e.POST("/api/logout", cfg.HandleLogoutUser)
 
