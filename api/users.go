@@ -187,3 +187,28 @@ func (cfg *ApiConfig) HandleLogoutUser(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, LogoutRes{Message: "user successfully logged out"})
 }
+
+type MeRes struct {
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+func (cfg *ApiConfig) HandleGetMe(c echo.Context) error {
+	userID := c.Request().Header.Get("userID")
+	user, err := cfg.DB.GetUserByID(c.Request().Context(), userID)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "user not found")
+	}
+
+	return c.JSON(
+		200,
+		MeRes{
+			Username:  user.Username,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt.Format(time.UnixDate),
+			UpdatedAt: user.UpdatedAt.Format(time.UnixDate),
+		},
+	)
+}

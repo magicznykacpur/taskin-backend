@@ -208,7 +208,7 @@ func TestUniqueUser(t *testing.T) {
 		log.Fatalf("couldnt unmarshall res body: %v", err)
 	}
 
-	assert.Equal(t, "couldn't create user: constraint failed: UNIQUE constraint failed: users.email (2067)", errorRes.ErrorMessage)
+	assert.Equal(t, "user with that email already exists", errorRes.ErrorMessage)
 }
 
 func TestLoginUser(t *testing.T) {

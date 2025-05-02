@@ -7,3 +7,6 @@ UPDATE refresh_tokens SET is_revoked = 1 WHERE user_id = ?;
 
 -- name: GetValidRefreshTokenForUserId :one
 SELECT * FROM refresh_tokens WHERE is_revoked = 0 AND expires_at > ? AND user_id = ?;
+
+-- name: GetValidRefreshTokenByValue :one
+SELECT * FROM refresh_tokens WHERE is_revoked = 0 AND token = ? AND expires_at > ?;

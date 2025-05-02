@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -27,11 +30,26 @@ func ValidateJWTToken(tokenString, secret string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	userID, err := claims.GetSubject()
 	if err != nil {
 		return "", err
 	}
 
 	return userID, nil
+}
+
+func GetAuthTokensFromHeaders(header http.Header) (string, string, error) {
+	refreshToken := header.Get("RefreshToken")
+	bearerToken := header.Get("Authorization")
+	if bearerToken == "" || refreshToken == "" {
+		return "", "", fmt.Errorf("missing authorization")
+	}
+
+	parts := strings.Split(bearerToken, " ")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("token malformed")
+	}
+
+	return refreshToken, parts[1], nil
 }
