@@ -25,4 +25,4 @@ WHERE id = ?
 RETURNING *;
 
 -- name: DeleteTaskByID :exec
-DELETE FROM tasks WHERE id = ?;
+DELETE FROM tasks WHERE id = ? AND user_id = ?;

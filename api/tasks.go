@@ -205,7 +205,7 @@ func (cfg *ApiConfig) HandleUpdateTask(c echo.Context) error {
 			Priority:    priority,
 			Category:    category,
 			UpdatedAt:   time.Now(),
-			ID: id,
+			ID:          id,
 		},
 	)
 	if err != nil {
@@ -237,4 +237,25 @@ func retrieveValuesFromTaskUpdateReq(updateTaskReq UpdateTaskReq, task database.
 	}
 
 	return title, description, priority, category
+}
+
+type DeleteTaskRes struct {
+	Message string `json:"message"`
+}
+
+func (cfg *ApiConfig) HandleDeleteTask(c echo.Context) error {
+	id := c.Param("id")
+	userID := c.Request().Header.Get("userID")
+
+	_, err := cfg.DB.GetTaskByID(c.Request().Context(), id)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, fmt.Sprintf("coudlnt delete task: %v", err))
+	}
+
+	err = cfg.DB.DeleteTaskByID(c.Request().Context(), database.DeleteTaskByIDParams{ID: id, UserID: userID})
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("coudlnt delete task: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, DeleteTaskRes{Message: fmt.Sprintf("task %s deleted successfully", id)})
 }

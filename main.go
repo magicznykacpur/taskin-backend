@@ -54,6 +54,7 @@ func main() {
 	e.GET("/api/tasks", cfg.HandleGetAllUsersTasks, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks/:id", cfg.HandleGetTaskByID, cfg.LoggedInMiddleware)
 	e.PUT("/api/tasks/:id", cfg.HandleUpdateTask, cfg.LoggedInMiddleware)
+	e.DELETE("/api/tasks/:id", cfg.HandleDeleteTask, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks/search", cfg.HandleGetTasksWhereTitleLike, cfg.LoggedInMiddleware)
 
 	e.Logger.Fatal(e.Start(cfg.Port))
