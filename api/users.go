@@ -188,7 +188,7 @@ func (cfg *ApiConfig) HandleLogoutUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, LogoutRes{Message: "user successfully logged out"})
 }
 
-type MeRes struct {
+type UserRes struct {
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	CreatedAt string `json:"created_at"`
@@ -204,11 +204,100 @@ func (cfg *ApiConfig) HandleGetMe(c echo.Context) error {
 
 	return c.JSON(
 		200,
-		MeRes{
+		UserRes{
 			Username:  user.Username,
 			Email:     user.Email,
 			CreatedAt: user.CreatedAt.Format(time.UnixDate),
 			UpdatedAt: user.UpdatedAt.Format(time.UnixDate),
 		},
 	)
+}
+
+type UpdateUserReq struct {
+	Email    string `json:"email,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+func (cfg *ApiConfig) HandleUpdateUser(c echo.Context) error {
+	userID := c.Request().Header.Get("userID")
+	req := c.Request()
+	defer req.Body.Close()
+
+	requestBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "coudln't read req body bytes")
+	}
+
+	var updateUserReq UpdateUserReq
+	if err := json.Unmarshal(requestBytes, &updateUserReq); err != nil {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	if updateUserReq == (UpdateUserReq{}) {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid, must provide at least one param to update")
+	}
+
+	user, err := cfg.DB.GetUserByID(c.Request().Context(), userID)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "user not found")
+	}
+
+	email, username, hashedPassword, err := retrieveValuesFromUpdateReq(updateUserReq, user)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt hash password: %v", err))
+	}
+
+	updatedUser, err := cfg.DB.UpdateUserByID(
+		req.Context(),
+		database.UpdateUserByIDParams{
+			ID:             user.ID,
+			UpdatedAt:      time.Now(),
+			Email:          email,
+			Username:       username,
+			HashedPassword: hashedPassword,
+		},
+	)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt update user: %v", err))
+	}
+
+	return c.JSON(
+		http.StatusOK,
+		UserRes{
+			Email:     updatedUser.Email,
+			Username:  updatedUser.Username,
+			CreatedAt: updatedUser.CreatedAt.Format(time.UnixDate),
+			UpdatedAt: updatedUser.UpdatedAt.Format(time.UnixDate),
+		},
+	)
+}
+
+func retrieveValuesFromUpdateReq(updateUserReq UpdateUserReq, user database.User) (string, string, string, error) {
+	email := updateUserReq.Email
+	if email == "" {
+		email = user.Email
+	}
+
+	username := updateUserReq.Username
+	if username == "" {
+		username = user.Username
+	}
+
+	password := updateUserReq.Password
+	hashedPassword := ""
+
+	if password == "" {
+		hashedPassword = user.HashedPassword
+	} else {
+		hashedPassword, err := auth.HashPassword(password)
+
+		if err != nil {
+			return "", "", "", err
+		}
+
+		return email, username, string(hashedPassword), nil
+	}
+
+	return email, username, string(hashedPassword), nil
 }

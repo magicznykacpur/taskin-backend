@@ -10,3 +10,9 @@ SELECT * FROM users WHERE email = ?;
 
 -- name: GetUsers :many
 SELECT * FROM users;
+
+-- name: UpdateUserByID :one
+UPDATE users
+SET email = ?, username = ?, hashed_password = ?, updated_at = ?
+WHERE id = ?
+RETURNING *;
