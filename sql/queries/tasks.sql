@@ -6,11 +6,14 @@ RETURNING *;
 -- name: GetTaskByID :one
 SELECT * FROM tasks WHERE id = ?;
 
--- name: GetTaskByTitle :one
-SELECT * FROM tasks WHERE UPPER(title) LIKE '%?%';
+-- name: GetTasksByTitle :many
+SELECT * FROM tasks WHERE UPPER(title) LIKE ?;
 
--- name: GetTaskByDescription :one
-SELECT * FROM tasks WHERE UPPER(description) LIKE '%?%';
+-- name: GetTasksByDescription :many
+SELECT * FROM tasks WHERE UPPER(description) LIKE ?;
+
+-- name: GetTaskByTitleAndDescription :many
+SELECT * FROM tasks WHERE UPPER(title) LIKE ? AND UPPER(description) LIKE ?;
 
 -- name: GetAllUsersTasks :many
 SELECT * FROM tasks WHERE user_id = ?;

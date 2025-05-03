@@ -30,6 +30,19 @@ type TaskRes struct {
 	UserID      string `json:"user_id"`
 }
 
+func mapTaskToTaskRes(task database.Task) TaskRes {
+	return TaskRes{
+		ID:          task.ID,
+		CreatedAt:   task.CreatedAt.Format(time.UnixDate),
+		UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
+		Title:       task.Title,
+		Description: task.Description,
+		Priority:    task.Priority,
+		Category:    task.Category,
+		UserID:      task.UserID,
+	}
+}
+
 func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 	req := c.Request()
 	defer req.Body.Close()
@@ -69,18 +82,7 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt create task: %v", err))
 	}
 
-	return c.JSON(
-		201,
-		TaskRes{
-			ID:          task.ID,
-			CreatedAt:   task.CreatedAt.Format(time.UnixDate),
-			UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
-			Title:       task.Title,
-			Description: task.Description,
-			Priority:    task.Priority,
-			Category:    task.Category,
-			UserID:      task.UserID,
-		})
+	return c.JSON(http.StatusCreated, mapTaskToTaskRes(task))
 }
 
 func (cfg *ApiConfig) HandleGetTaskByID(c echo.Context) error {
@@ -91,19 +93,7 @@ func (cfg *ApiConfig) HandleGetTaskByID(c echo.Context) error {
 		return respondWithError(c, http.StatusNotFound, "task not found")
 	}
 
-	return c.JSON(
-		200,
-		TaskRes{
-			ID:          task.ID,
-			CreatedAt:   task.CreatedAt.Format(time.UnixDate),
-			UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
-			Title:       task.Title,
-			Description: task.Description,
-			Priority:    task.Priority,
-			Category:    task.Category,
-			UserID:      task.UserID,
-		},
-	)
+	return c.JSON(http.StatusCreated, mapTaskToTaskRes(task))
 }
 
 func (cfg *ApiConfig) HandleGetAllUsersTasks(c echo.Context) error {
@@ -116,17 +106,63 @@ func (cfg *ApiConfig) HandleGetAllUsersTasks(c echo.Context) error {
 
 	tasksRes := []TaskRes{}
 	for _, task := range tasks {
-		tasksRes = append(tasksRes, TaskRes{
-			ID:          task.ID,
-			CreatedAt:   task.CreatedAt.Format(time.UnixDate),
-			UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
-			Title:       task.Title,
-			Description: task.Description,
-			Priority:    task.Priority,
-			Category:    task.Category,
-			UserID:      task.UserID,
-		})
+		tasksRes = append(tasksRes, mapTaskToTaskRes(task))
 	}
 
-	return c.JSON(200, tasksRes)
+	return c.JSON(http.StatusOK, tasksRes)
+}
+
+func (cfg *ApiConfig) HandleGetTasksWhereTitleLike(c echo.Context) error {
+	title := c.QueryParam("title")
+	description := c.QueryParam("description")
+
+	if title != "" && description != "" {
+		tasks, err := cfg.DB.GetTaskByTitleAndDescription(
+			c.Request().Context(),
+			database.GetTaskByTitleAndDescriptionParams{
+				Title:       fmt.Sprintf("%%%s%%", title),
+				Description: fmt.Sprintf("%%%s%%", description),
+			},
+		)
+		if err != nil {
+			return respondWithError(c, http.StatusNotFound, "no tasks found with this title and description")
+		}
+
+		tasksRes := []TaskRes{}
+		for _, task := range tasks {
+			tasksRes = append(tasksRes, mapTaskToTaskRes(task))
+		}
+
+		return c.JSON(http.StatusOK, tasksRes)
+	}
+
+	if title != "" {
+		tasks, err := cfg.DB.GetTasksByTitle(c.Request().Context(), fmt.Sprintf("%%%s%%", title))
+		if err != nil {
+			return respondWithError(c, http.StatusNotFound, "no tasks found with this title")
+		}
+
+		tasksRes := []TaskRes{}
+		for _, task := range tasks {
+			tasksRes = append(tasksRes, mapTaskToTaskRes(task))
+		}
+
+		return c.JSON(http.StatusOK, tasksRes)
+	}
+
+	if description != "" {
+		tasks, err := cfg.DB.GetTasksByDescription(c.Request().Context(), fmt.Sprintf("%%%s%%", description))
+		if err != nil {
+			return respondWithError(c, http.StatusNotFound, "no tasks found with this description")
+		}
+
+		tasksRes := []TaskRes{}
+		for _, task := range tasks {
+			tasksRes = append(tasksRes, mapTaskToTaskRes(task))
+		}
+
+		return c.JSON(http.StatusOK, tasksRes)
+	}
+
+	return respondWithError(c, http.StatusBadRequest, "title or description need to be specified as query parameters")
 }

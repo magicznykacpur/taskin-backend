@@ -53,6 +53,7 @@ func main() {
 	e.POST("/api/tasks", cfg.HandleCreateTask, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks", cfg.HandleGetAllUsersTasks, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks/:id", cfg.HandleGetTaskByID, cfg.LoggedInMiddleware)
+	e.GET("/api/tasks/search", cfg.HandleGetTasksWhereTitleLike, cfg.LoggedInMiddleware)
 
 	e.Logger.Fatal(e.Start(cfg.Port))
 }

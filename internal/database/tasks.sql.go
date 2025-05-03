@@ -97,26 +97,6 @@ func (q *Queries) GetAllUsersTasks(ctx context.Context, userID string) ([]Task, 
 	return items, nil
 }
 
-const getTaskByDescription = `-- name: GetTaskByDescription :one
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(description) LIKE '%?%'
-`
-
-func (q *Queries) GetTaskByDescription(ctx context.Context) (Task, error) {
-	row := q.db.QueryRowContext(ctx, getTaskByDescription)
-	var i Task
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Title,
-		&i.Description,
-		&i.Priority,
-		&i.Category,
-		&i.UserID,
-	)
-	return i, err
-}
-
 const getTaskByID = `-- name: GetTaskByID :one
 SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE id = ?
 `
@@ -137,24 +117,117 @@ func (q *Queries) GetTaskByID(ctx context.Context, id string) (Task, error) {
 	return i, err
 }
 
-const getTaskByTitle = `-- name: GetTaskByTitle :one
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE '%?%'
+const getTaskByTitleAndDescription = `-- name: GetTaskByTitleAndDescription :many
+SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE ? AND UPPER(description) LIKE ?
 `
 
-func (q *Queries) GetTaskByTitle(ctx context.Context) (Task, error) {
-	row := q.db.QueryRowContext(ctx, getTaskByTitle)
-	var i Task
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Title,
-		&i.Description,
-		&i.Priority,
-		&i.Category,
-		&i.UserID,
-	)
-	return i, err
+type GetTaskByTitleAndDescriptionParams struct {
+	Title       string
+	Description string
+}
+
+func (q *Queries) GetTaskByTitleAndDescription(ctx context.Context, arg GetTaskByTitleAndDescriptionParams) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTaskByTitleAndDescription, arg.Title, arg.Description)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Description,
+			&i.Priority,
+			&i.Category,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTasksByDescription = `-- name: GetTasksByDescription :many
+SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(description) LIKE ?
+`
+
+func (q *Queries) GetTasksByDescription(ctx context.Context, description string) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTasksByDescription, description)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Description,
+			&i.Priority,
+			&i.Category,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTasksByTitle = `-- name: GetTasksByTitle :many
+SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE ?
+`
+
+func (q *Queries) GetTasksByTitle(ctx context.Context, title string) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTasksByTitle, title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Description,
+			&i.Priority,
+			&i.Category,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateTaskByID = `-- name: UpdateTaskByID :one
