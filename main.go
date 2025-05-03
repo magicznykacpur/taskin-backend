@@ -46,13 +46,14 @@ func main() {
 
 	e.POST("/api/signup", cfg.HandleCreateUser)
 	e.POST("/api/login", cfg.HandleLoginUser)
-	e.POST("/api/logout", cfg.HandleLogoutUser)
+	e.POST("/api/logout", cfg.HandleLogoutUser, cfg.LoggedInMiddleware)
 	e.GET("/api/me", cfg.HandleGetMe, cfg.LoggedInMiddleware)
 	e.PUT("/api/users", cfg.HandleUpdateUser, cfg.LoggedInMiddleware)
 
 	e.POST("/api/tasks", cfg.HandleCreateTask, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks", cfg.HandleGetAllUsersTasks, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks/:id", cfg.HandleGetTaskByID, cfg.LoggedInMiddleware)
+	e.PUT("/api/tasks/:id", cfg.HandleUpdateTask, cfg.LoggedInMiddleware)
 	e.GET("/api/tasks/search", cfg.HandleGetTasksWhereTitleLike, cfg.LoggedInMiddleware)
 
 	e.Logger.Fatal(e.Start(cfg.Port))

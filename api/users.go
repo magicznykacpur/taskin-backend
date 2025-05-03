@@ -243,7 +243,7 @@ func (cfg *ApiConfig) HandleUpdateUser(c echo.Context) error {
 		return respondWithError(c, http.StatusNotFound, "user not found")
 	}
 
-	email, username, hashedPassword, err := retrieveValuesFromUpdateReq(updateUserReq, user)
+	email, username, hashedPassword, err := retrieveValuesFromUserUpdateReq(updateUserReq, user)
 	if err != nil {
 		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt hash password: %v", err))
 	}
@@ -273,7 +273,7 @@ func (cfg *ApiConfig) HandleUpdateUser(c echo.Context) error {
 	)
 }
 
-func retrieveValuesFromUpdateReq(updateUserReq UpdateUserReq, user database.User) (string, string, string, error) {
+func retrieveValuesFromUserUpdateReq(updateUserReq UpdateUserReq, user database.User) (string, string, string, error) {
 	email := updateUserReq.Email
 	if email == "" {
 		email = user.Email

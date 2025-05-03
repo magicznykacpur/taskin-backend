@@ -166,3 +166,75 @@ func (cfg *ApiConfig) HandleGetTasksWhereTitleLike(c echo.Context) error {
 
 	return respondWithError(c, http.StatusBadRequest, "title or description need to be specified as query parameters")
 }
+
+type UpdateTaskReq struct {
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	Priority    int64  `json:"priority,omitempty"`
+	Category    string `json:"category,omitempty"`
+}
+
+func (cfg *ApiConfig) HandleUpdateTask(c echo.Context) error {
+	id := c.Param("id")
+
+	req := c.Request()
+	defer req.Body.Close()
+
+	reqBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, "couldnt read req bytes")
+	}
+
+	var updateTaskReq UpdateTaskReq
+	if err := json.Unmarshal(reqBytes, &updateTaskReq); err != nil {
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	task, err := cfg.DB.GetTaskByID(req.Context(), id)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "task not found")
+	}
+
+	title, description, priority, category := retrieveValuesFromTaskUpdateReq(updateTaskReq, task)
+
+	updatedTask, err := cfg.DB.UpdateTaskByID(
+		req.Context(),
+		database.UpdateTaskByIDParams{
+			Title:       title,
+			Description: description,
+			Priority:    priority,
+			Category:    category,
+			UpdatedAt:   time.Now(),
+			ID: id,
+		},
+	)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("coudlnt update task: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, mapTaskToTaskRes(updatedTask))
+}
+
+func retrieveValuesFromTaskUpdateReq(updateTaskReq UpdateTaskReq, task database.Task) (string, string, int64, string) {
+	title := updateTaskReq.Title
+	if title == "" {
+		title = task.Title
+	}
+
+	description := updateTaskReq.Description
+	if description == "" {
+		description = task.Description
+	}
+
+	priority := updateTaskReq.Priority
+	if priority < 0 {
+		priority = task.Priority
+	}
+
+	category := updateTaskReq.Category
+	if category == "" {
+		category = task.Category
+	}
+
+	return title, description, priority, category
+}
