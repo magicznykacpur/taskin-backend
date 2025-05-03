@@ -17,6 +17,17 @@ type RefreshToken struct {
 	ExpiresAt time.Time
 }
 
+type Task struct {
+	ID          string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Title       string
+	Description string
+	Priority    int64
+	Category    string
+	UserID      string
+}
+
 type User struct {
 	ID             string
 	CreatedAt      time.Time
