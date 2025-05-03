@@ -44,6 +44,14 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
+	if createTaskReq.Title == "" ||
+		createTaskReq.Description == "" ||
+		createTaskReq.Priority < 0 ||
+		createTaskReq.Category == "" {
+
+		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
 	task, err := cfg.DB.CreateTask(
 		req.Context(),
 		database.CreateTaskParams{
