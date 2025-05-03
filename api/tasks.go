@@ -19,7 +19,7 @@ type CreateTaskReq struct {
 	Category    string `json:"category"`
 }
 
-type CreateTaskRes struct {
+type TaskRes struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -71,7 +71,7 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 
 	return c.JSON(
 		201,
-		CreateTaskRes{
+		TaskRes{
 			ID:          task.ID,
 			CreatedAt:   task.CreatedAt.Format(time.UnixDate),
 			UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
@@ -81,4 +81,52 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 			Category:    task.Category,
 			UserID:      task.UserID,
 		})
+}
+
+func (cfg *ApiConfig) HandleGetTaskByID(c echo.Context) error {
+	id := c.Param("id")
+
+	task, err := cfg.DB.GetTaskByID(c.Request().Context(), id)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "task not found")
+	}
+
+	return c.JSON(
+		200,
+		TaskRes{
+			ID:          task.ID,
+			CreatedAt:   task.CreatedAt.Format(time.UnixDate),
+			UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
+			Title:       task.Title,
+			Description: task.Description,
+			Priority:    task.Priority,
+			Category:    task.Category,
+			UserID:      task.UserID,
+		},
+	)
+}
+
+func (cfg *ApiConfig) HandleGetAllUsersTasks(c echo.Context) error {
+	userID := c.Request().Header.Get("userID")
+
+	tasks, err := cfg.DB.GetAllUsersTasks(c.Request().Context(), userID)
+	if err != nil {
+		return respondWithError(c, http.StatusNotFound, "no tasks were found for user with this id")
+	}
+
+	tasksRes := []TaskRes{}
+	for _, task := range tasks {
+		tasksRes = append(tasksRes, TaskRes{
+			ID:          task.ID,
+			CreatedAt:   task.CreatedAt.Format(time.UnixDate),
+			UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
+			Title:       task.Title,
+			Description: task.Description,
+			Priority:    task.Priority,
+			Category:    task.Category,
+			UserID:      task.UserID,
+		})
+	}
+
+	return c.JSON(200, tasksRes)
 }
