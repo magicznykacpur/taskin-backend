@@ -50,5 +50,7 @@ func main() {
 	e.GET("/api/me", cfg.HandleGetMe, cfg.LoggedInMiddleware)
 	e.PUT("/api/users", cfg.HandleUpdateUser, cfg.LoggedInMiddleware)
 
+	e.POST("/api/tasks", cfg.HandleCreateTask, cfg.LoggedInMiddleware)
+	
 	e.Logger.Fatal(e.Start(cfg.Port))
 }
