@@ -11,15 +11,16 @@ import (
 )
 
 const createTask = `-- name: CreateTask :one
-INSERT INTO tasks(id, created_at, updated_at, title, description, priority, category, user_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING id, created_at, updated_at, title, description, priority, category, user_id
+INSERT INTO tasks(id, created_at, updated_at, due_until, title, description, priority, category, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id, created_at, updated_at, due_until, title, description, priority, category, user_id
 `
 
 type CreateTaskParams struct {
 	ID          string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	DueUntil    time.Time
 	Title       string
 	Description string
 	Priority    int64
@@ -32,6 +33,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.DueUntil,
 		arg.Title,
 		arg.Description,
 		arg.Priority,
@@ -43,6 +45,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DueUntil,
 		&i.Title,
 		&i.Description,
 		&i.Priority,
@@ -67,7 +70,7 @@ func (q *Queries) DeleteTaskByID(ctx context.Context, arg DeleteTaskByIDParams) 
 }
 
 const getAllUsersTasks = `-- name: GetAllUsersTasks :many
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE user_id = ?
+SELECT id, created_at, updated_at, due_until, title, description, priority, category, user_id FROM tasks WHERE user_id = ?
 `
 
 func (q *Queries) GetAllUsersTasks(ctx context.Context, userID string) ([]Task, error) {
@@ -83,6 +86,7 @@ func (q *Queries) GetAllUsersTasks(ctx context.Context, userID string) ([]Task, 
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DueUntil,
 			&i.Title,
 			&i.Description,
 			&i.Priority,
@@ -103,7 +107,7 @@ func (q *Queries) GetAllUsersTasks(ctx context.Context, userID string) ([]Task, 
 }
 
 const getTaskByID = `-- name: GetTaskByID :one
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE id = ?
+SELECT id, created_at, updated_at, due_until, title, description, priority, category, user_id FROM tasks WHERE id = ?
 `
 
 func (q *Queries) GetTaskByID(ctx context.Context, id string) (Task, error) {
@@ -113,6 +117,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, id string) (Task, error) {
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DueUntil,
 		&i.Title,
 		&i.Description,
 		&i.Priority,
@@ -123,7 +128,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, id string) (Task, error) {
 }
 
 const getTaskByTitleAndDescription = `-- name: GetTaskByTitleAndDescription :many
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE ? AND UPPER(description) LIKE ?
+SELECT id, created_at, updated_at, due_until, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE ? AND UPPER(description) LIKE ?
 `
 
 type GetTaskByTitleAndDescriptionParams struct {
@@ -144,6 +149,7 @@ func (q *Queries) GetTaskByTitleAndDescription(ctx context.Context, arg GetTaskB
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DueUntil,
 			&i.Title,
 			&i.Description,
 			&i.Priority,
@@ -164,7 +170,7 @@ func (q *Queries) GetTaskByTitleAndDescription(ctx context.Context, arg GetTaskB
 }
 
 const getTasksByDescription = `-- name: GetTasksByDescription :many
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(description) LIKE ?
+SELECT id, created_at, updated_at, due_until, title, description, priority, category, user_id FROM tasks WHERE UPPER(description) LIKE ?
 `
 
 func (q *Queries) GetTasksByDescription(ctx context.Context, description string) ([]Task, error) {
@@ -180,6 +186,7 @@ func (q *Queries) GetTasksByDescription(ctx context.Context, description string)
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DueUntil,
 			&i.Title,
 			&i.Description,
 			&i.Priority,
@@ -200,7 +207,7 @@ func (q *Queries) GetTasksByDescription(ctx context.Context, description string)
 }
 
 const getTasksByTitle = `-- name: GetTasksByTitle :many
-SELECT id, created_at, updated_at, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE ?
+SELECT id, created_at, updated_at, due_until, title, description, priority, category, user_id FROM tasks WHERE UPPER(title) LIKE ?
 `
 
 func (q *Queries) GetTasksByTitle(ctx context.Context, title string) ([]Task, error) {
@@ -216,6 +223,7 @@ func (q *Queries) GetTasksByTitle(ctx context.Context, title string) ([]Task, er
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DueUntil,
 			&i.Title,
 			&i.Description,
 			&i.Priority,
@@ -237,9 +245,9 @@ func (q *Queries) GetTasksByTitle(ctx context.Context, title string) ([]Task, er
 
 const updateTaskByID = `-- name: UpdateTaskByID :one
 UPDATE tasks
-SET title = ?, description = ?, priority = ?, category = ?, updated_at = ?
+SET title = ?, description = ?, priority = ?, category = ?, updated_at = ?, due_until = ?
 WHERE id = ?
-RETURNING id, created_at, updated_at, title, description, priority, category, user_id
+RETURNING id, created_at, updated_at, due_until, title, description, priority, category, user_id
 `
 
 type UpdateTaskByIDParams struct {
@@ -248,6 +256,7 @@ type UpdateTaskByIDParams struct {
 	Priority    int64
 	Category    string
 	UpdatedAt   time.Time
+	DueUntil    time.Time
 	ID          string
 }
 
@@ -258,6 +267,7 @@ func (q *Queries) UpdateTaskByID(ctx context.Context, arg UpdateTaskByIDParams) 
 		arg.Priority,
 		arg.Category,
 		arg.UpdatedAt,
+		arg.DueUntil,
 		arg.ID,
 	)
 	var i Task
@@ -265,6 +275,7 @@ func (q *Queries) UpdateTaskByID(ctx context.Context, arg UpdateTaskByIDParams) 
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DueUntil,
 		&i.Title,
 		&i.Description,
 		&i.Priority,

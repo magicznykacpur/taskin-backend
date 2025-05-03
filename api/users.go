@@ -149,33 +149,14 @@ func (cfg *ApiConfig) HandleLoginUser(c echo.Context) error {
 	}
 }
 
-type LogoutReq struct {
-	Email string `json:"email"`
-}
-
 type LogoutRes struct {
 	Message string `json:"message"`
 }
 
 func (cfg *ApiConfig) HandleLogoutUser(c echo.Context) error {
-	req := c.Request()
-	defer req.Body.Close()
+	userID := c.Request().Header.Get("userID")
 
-	requestBytes, err := io.ReadAll(req.Body)
-	if err != nil {
-		return respondWithError(c, http.StatusInternalServerError, "coudln't read req body bytes")
-	}
-
-	var logoutReq LogoutReq
-	if err := json.Unmarshal(requestBytes, &logoutReq); err != nil {
-		return respondWithError(c, http.StatusBadRequest, "request body invalid")
-	}
-
-	if logoutReq.Email == "" {
-		return respondWithError(c, http.StatusBadRequest, "request body invalid")
-	}
-
-	user, err := cfg.DB.GetUserByEmail(c.Request().Context(), logoutReq.Email)
+	user, err := cfg.DB.GetUserByID(c.Request().Context(), userID)
 	if err != nil {
 		return respondWithError(c, http.StatusNotFound, "user not found")
 	}

@@ -1,6 +1,6 @@
 -- name: CreateTask :one
-INSERT INTO tasks(id, created_at, updated_at, title, description, priority, category, user_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO tasks(id, created_at, updated_at, due_until, title, description, priority, category, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetTaskByID :one
@@ -20,7 +20,7 @@ SELECT * FROM tasks WHERE user_id = ?;
 
 -- name: UpdateTaskByID :one
 UPDATE tasks
-SET title = ?, description = ?, priority = ?, category = ?, updated_at = ?
+SET title = ?, description = ?, priority = ?, category = ?, updated_at = ?, due_until = ?
 WHERE id = ?
 RETURNING *;
 

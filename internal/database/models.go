@@ -21,6 +21,7 @@ type Task struct {
 	ID          string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	DueUntil    time.Time
 	Title       string
 	Description string
 	Priority    int64

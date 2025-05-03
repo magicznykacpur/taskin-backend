@@ -17,6 +17,7 @@ type CreateTaskReq struct {
 	Description string `json:"description"`
 	Priority    int64  `json:"priority"`
 	Category    string `json:"category"`
+	DueUntil    string `json:"due_until"`
 }
 
 type TaskRes struct {
@@ -27,14 +28,16 @@ type TaskRes struct {
 	Category    string `json:"category"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
+	DueUntil    string `json:"due_until"`
 	UserID      string `json:"user_id"`
 }
 
 func mapTaskToTaskRes(task database.Task) TaskRes {
 	return TaskRes{
 		ID:          task.ID,
-		CreatedAt:   task.CreatedAt.Format(time.UnixDate),
-		UpdatedAt:   task.UpdatedAt.Format(time.UnixDate),
+		CreatedAt:   task.CreatedAt.Format(time.RFC822),
+		UpdatedAt:   task.UpdatedAt.Format(time.RFC822),
+		DueUntil:    task.DueUntil.Format(time.RFC822),
 		Title:       task.Title,
 		Description: task.Description,
 		Priority:    task.Priority,
@@ -60,9 +63,15 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 	if createTaskReq.Title == "" ||
 		createTaskReq.Description == "" ||
 		createTaskReq.Priority < 0 ||
-		createTaskReq.Category == "" {
+		createTaskReq.Category == "" ||
+		createTaskReq.DueUntil == "" {
 
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
+	}
+
+	dueUntil, err := time.Parse(time.RFC822, createTaskReq.DueUntil)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt parse date: %v", err))
 	}
 
 	task, err := cfg.DB.CreateTask(
@@ -71,6 +80,7 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 			ID:          uuid.NewString(),
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
+			DueUntil:    dueUntil,
 			Title:       createTaskReq.Title,
 			Description: createTaskReq.Description,
 			Priority:    createTaskReq.Priority,
@@ -172,6 +182,7 @@ type UpdateTaskReq struct {
 	Description string `json:"description,omitempty"`
 	Priority    int64  `json:"priority,omitempty"`
 	Category    string `json:"category,omitempty"`
+	DueUntil    string `json:"due_until,omitempty"`
 }
 
 func (cfg *ApiConfig) HandleUpdateTask(c echo.Context) error {
@@ -195,7 +206,10 @@ func (cfg *ApiConfig) HandleUpdateTask(c echo.Context) error {
 		return respondWithError(c, http.StatusNotFound, "task not found")
 	}
 
-	title, description, priority, category := retrieveValuesFromTaskUpdateReq(updateTaskReq, task)
+	title, description, priority, category, dueUntil, err := retrieveValuesFromTaskUpdateReq(updateTaskReq, task)
+	if err != nil {
+		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt parse time: %v", err))
+	}
 
 	updatedTask, err := cfg.DB.UpdateTaskByID(
 		req.Context(),
@@ -205,6 +219,7 @@ func (cfg *ApiConfig) HandleUpdateTask(c echo.Context) error {
 			Priority:    priority,
 			Category:    category,
 			UpdatedAt:   time.Now(),
+			DueUntil:    dueUntil,
 			ID:          id,
 		},
 	)
@@ -215,7 +230,7 @@ func (cfg *ApiConfig) HandleUpdateTask(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapTaskToTaskRes(updatedTask))
 }
 
-func retrieveValuesFromTaskUpdateReq(updateTaskReq UpdateTaskReq, task database.Task) (string, string, int64, string) {
+func retrieveValuesFromTaskUpdateReq(updateTaskReq UpdateTaskReq, task database.Task) (string, string, int64, string, time.Time, error) {
 	title := updateTaskReq.Title
 	if title == "" {
 		title = task.Title
@@ -236,7 +251,12 @@ func retrieveValuesFromTaskUpdateReq(updateTaskReq UpdateTaskReq, task database.
 		category = task.Category
 	}
 
-	return title, description, priority, category
+	dueUntil, err := time.Parse(time.RFC822, updateTaskReq.DueUntil)
+	if err != nil {
+		return "", "", -1, "", time.Time{}, err
+	}
+
+	return title, description, priority, category, dueUntil, nil
 }
 
 type DeleteTaskRes struct {
