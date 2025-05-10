@@ -30,12 +30,12 @@ func loadEnvVars() {
 func main() {
 	loadEnvVars()
 
-	db, err := sql.Open("sqlite", "taskin.db")
+	db, err := sql.Open("sqlite", os.Getenv("DB_STRING"))
 	if err != nil {
 		log.Fatalf("couldnt open database: %v", err)
 	}
 
-	cfg := api.ApiConfig{Port: ":42069", DB: database.New(db)}
+	cfg := api.ApiConfig{Port: ":" + os.Getenv("PORT"), DB: database.New(db)}
 
 	e := echo.New()
 	e.Use(middleware.Logger())

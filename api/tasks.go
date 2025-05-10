@@ -35,9 +35,9 @@ type TaskRes struct {
 func mapTaskToTaskRes(task database.Task) TaskRes {
 	return TaskRes{
 		ID:          task.ID,
-		CreatedAt:   task.CreatedAt.Format(time.RFC1123),
-		UpdatedAt:   task.UpdatedAt.Format(time.RFC1123),
-		DueUntil:    task.DueUntil.Format(time.RFC1123),
+		CreatedAt:   task.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   task.UpdatedAt.Format(time.RFC3339),
+		DueUntil:    task.DueUntil.Format(time.RFC3339),
 		Title:       task.Title,
 		Description: task.Description,
 		Priority:    task.Priority,
@@ -69,7 +69,7 @@ func (cfg *ApiConfig) HandleCreateTask(c echo.Context) error {
 		return respondWithError(c, http.StatusBadRequest, "request body invalid")
 	}
 
-	dueUntil, err := time.Parse(time.RFC1123, createTaskReq.DueUntil)
+	dueUntil, err := time.Parse(time.RFC3339, createTaskReq.DueUntil)
 	if err != nil {
 		return respondWithError(c, http.StatusInternalServerError, fmt.Sprintf("couldnt parse date: %v", err))
 	}
@@ -103,7 +103,7 @@ func (cfg *ApiConfig) HandleGetTaskByID(c echo.Context) error {
 		return respondWithError(c, http.StatusNotFound, "task not found")
 	}
 
-	return c.JSON(http.StatusCreated, mapTaskToTaskRes(task))
+	return c.JSON(http.StatusOK, mapTaskToTaskRes(task))
 }
 
 func (cfg *ApiConfig) HandleGetAllUsersTasks(c echo.Context) error {
@@ -251,7 +251,7 @@ func retrieveValuesFromTaskUpdateReq(updateTaskReq UpdateTaskReq, task database.
 		category = task.Category
 	}
 
-	dueUntil, err := time.Parse(time.RFC1123, updateTaskReq.DueUntil)
+	dueUntil, err := time.Parse(time.RFC3339, updateTaskReq.DueUntil)
 	if err != nil {
 		return "", "", -1, "", time.Time{}, err
 	}

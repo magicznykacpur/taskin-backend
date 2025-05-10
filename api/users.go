@@ -188,8 +188,8 @@ func (cfg *ApiConfig) HandleGetMe(c echo.Context) error {
 		UserRes{
 			Username:  user.Username,
 			Email:     user.Email,
-			CreatedAt: user.CreatedAt.Format(time.UnixDate),
-			UpdatedAt: user.UpdatedAt.Format(time.UnixDate),
+			CreatedAt: user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 		},
 	)
 }
@@ -248,8 +248,8 @@ func (cfg *ApiConfig) HandleUpdateUser(c echo.Context) error {
 		UserRes{
 			Email:     updatedUser.Email,
 			Username:  updatedUser.Username,
-			CreatedAt: updatedUser.CreatedAt.Format(time.UnixDate),
-			UpdatedAt: updatedUser.UpdatedAt.Format(time.UnixDate),
+			CreatedAt: updatedUser.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: updatedUser.UpdatedAt.Format(time.RFC3339),
 		},
 	)
 }
