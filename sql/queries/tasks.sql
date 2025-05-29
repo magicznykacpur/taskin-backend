@@ -7,13 +7,13 @@ RETURNING *;
 SELECT * FROM tasks WHERE id = ?;
 
 -- name: GetTasksByTitle :many
-SELECT * FROM tasks WHERE UPPER(title) LIKE ?;
+SELECT * FROM tasks WHERE title LIKE ?;
 
 -- name: GetTasksByDescription :many
-SELECT * FROM tasks WHERE UPPER(description) LIKE ?;
+SELECT * FROM tasks WHERE description LIKE ?;
 
 -- name: GetTaskByTitleAndDescription :many
-SELECT * FROM tasks WHERE UPPER(title) LIKE ? AND UPPER(description) LIKE ?;
+SELECT * FROM tasks WHERE title LIKE ? OR description LIKE ?;
 
 -- name: GetAllUsersTasks :many
 SELECT * FROM tasks WHERE user_id = ?;

@@ -122,7 +122,7 @@ func (cfg *ApiConfig) HandleGetAllUsersTasks(c echo.Context) error {
 	return c.JSON(http.StatusOK, tasksRes)
 }
 
-func (cfg *ApiConfig) HandleGetTasksWhereTitleLike(c echo.Context) error {
+func (cfg *ApiConfig) HandleGetTasksWhereTitleOrDescriptionLike(c echo.Context) error {
 	title := c.QueryParam("title")
 	description := c.QueryParam("description")
 
@@ -130,8 +130,8 @@ func (cfg *ApiConfig) HandleGetTasksWhereTitleLike(c echo.Context) error {
 		tasks, err := cfg.DB.GetTaskByTitleAndDescription(
 			c.Request().Context(),
 			database.GetTaskByTitleAndDescriptionParams{
-				Title:       fmt.Sprintf("%%%s%%", title),
-				Description: fmt.Sprintf("%%%s%%", description),
+				Title:       "%" + title + "%",
+				Description: "%" + description + "%",
 			},
 		)
 		if err != nil {
