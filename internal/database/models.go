@@ -36,4 +36,5 @@ type User struct {
 	Email          string
 	Username       string
 	HashedPassword string
+	IsAdmin        int64
 }

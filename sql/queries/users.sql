@@ -16,3 +16,9 @@ UPDATE users
 SET email = ?, username = ?, hashed_password = ?, updated_at = ?
 WHERE id = ?
 RETURNING *;
+
+-- name: AddAdminPrivilages :one
+UPDATE users SET is_admin = TRUE, updated_at = ? WHERE id = ? RETURNING *;
+
+-- name: RevokeAdminPrivilages :one
+UPDATE users SET is_admin = FALSE, updated_at = ? WHERE id = ? RETURNING *;

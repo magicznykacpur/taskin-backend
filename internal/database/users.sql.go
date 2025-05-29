@@ -10,6 +10,30 @@ import (
 	"time"
 )
 
+const addAdminPrivilages = `-- name: AddAdminPrivilages :one
+UPDATE users SET is_admin = TRUE, updated_at = ? WHERE id = ? RETURNING id, created_at, updated_at, email, username, hashed_password, is_admin
+`
+
+type AddAdminPrivilagesParams struct {
+	UpdatedAt time.Time
+	ID        string
+}
+
+func (q *Queries) AddAdminPrivilages(ctx context.Context, arg AddAdminPrivilagesParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, addAdminPrivilages, arg.UpdatedAt, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.Username,
+		&i.HashedPassword,
+		&i.IsAdmin,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :exec
 INSERT INTO users(id, created_at, updated_at, email, username, hashed_password)
 VALUES (?, ?, ?, ?, ?, ?)
@@ -37,7 +61,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, created_at, updated_at, email, username, hashed_password FROM users WHERE email = ?
+SELECT id, created_at, updated_at, email, username, hashed_password, is_admin FROM users WHERE email = ?
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -50,12 +74,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Email,
 		&i.Username,
 		&i.HashedPassword,
+		&i.IsAdmin,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, created_at, updated_at, email, username, hashed_password FROM users WHERE id = ?
+SELECT id, created_at, updated_at, email, username, hashed_password, is_admin FROM users WHERE id = ?
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
@@ -68,12 +93,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.Email,
 		&i.Username,
 		&i.HashedPassword,
+		&i.IsAdmin,
 	)
 	return i, err
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, created_at, updated_at, email, username, hashed_password FROM users
+SELECT id, created_at, updated_at, email, username, hashed_password, is_admin FROM users
 `
 
 func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
@@ -92,6 +118,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.Username,
 			&i.HashedPassword,
+			&i.IsAdmin,
 		); err != nil {
 			return nil, err
 		}
@@ -106,11 +133,35 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const revokeAdminPrivilages = `-- name: RevokeAdminPrivilages :one
+UPDATE users SET is_admin = FALSE, updated_at = ? WHERE id = ? RETURNING id, created_at, updated_at, email, username, hashed_password, is_admin
+`
+
+type RevokeAdminPrivilagesParams struct {
+	UpdatedAt time.Time
+	ID        string
+}
+
+func (q *Queries) RevokeAdminPrivilages(ctx context.Context, arg RevokeAdminPrivilagesParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, revokeAdminPrivilages, arg.UpdatedAt, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.Username,
+		&i.HashedPassword,
+		&i.IsAdmin,
+	)
+	return i, err
+}
+
 const updateUserByID = `-- name: UpdateUserByID :one
 UPDATE users
 SET email = ?, username = ?, hashed_password = ?, updated_at = ?
 WHERE id = ?
-RETURNING id, created_at, updated_at, email, username, hashed_password
+RETURNING id, created_at, updated_at, email, username, hashed_password, is_admin
 `
 
 type UpdateUserByIDParams struct {
@@ -137,6 +188,7 @@ func (q *Queries) UpdateUserByID(ctx context.Context, arg UpdateUserByIDParams) 
 		&i.Email,
 		&i.Username,
 		&i.HashedPassword,
+		&i.IsAdmin,
 	)
 	return i, err
 }
